@@ -1,0 +1,960 @@
+CREATE OR REPLACE FUNCTION public.get_count_permissions()
+    RETURNS table(count_permissions bigint)
+AS $BODY$
+begin
+return query select count(*) as count_permissions from permission;
+end;
+$BODY$
+LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION public.del_status_management_log(
+	in var_permission_id integer)
+    RETURNS setof void
+AS $BODY$
+begin
+delete from status_management_log where status_management_log.permissionid = var_permission_id;
+ end;
+$BODY$
+LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.get_status_management_log(
+	in var_permission_id integer)
+    RETURNS table(status_management_log_id integer, comment text, date timestamp without time zone, 
+				  date_change_status timestamp without time zone, status_id integer, status_name character varying(100),
+				  name character varying(100), lastname character varying(100), patronymic character varying(100), 
+				  permission_id integer, user_id integer)
+AS $BODY$
+begin
+ return query select status_management_log.id as status_management_log_id, status_management_log.comment,
+ status_management_log.date, status_management_log.date_change_status, status.id as status_id,
+ status.name as status_name, "user".name, "user".lastname, "user".patronymic,
+ status_management_log.permissionid as permission_id, status_management_log.userid as user_id
+ from status_management_log
+ join status on status.id = status_management_log.statusid
+ join "user" on "user".id = status_management_log.userid
+ where status_management_log.permissionid = var_permission_id
+ order by status_management_log.id;
+ end;
+$BODY$
+LANGUAGE plpgsql;
+
+
+select * from permission
+				 join date on date.permissionid = permission.id
+				 where date.date >= to_date('2022.05.11', 'YYYY-MM-DD') and date.date <= to_date('2022.05.11', 'YYYY-MM-DD');
+
+select permission.id, permission.number, permission.description, permission.addition,
+			subdivision.name as subdivision_name, subdivision.id as subdivision_id, permission.untypical_work,
+			status.name as status_name, status.id as status_id, sml1.id as status_management_log_id,
+		sml1.comment as status_management_log_comment, sml1.date, sml1.date_change_status
+			from permission
+			join subdivision on subdivision.id = permission.subdivisionid
+			join status_management_log as sml1 on sml1.permissionid =  permission.id
+			join status on status.id = sml1.statusid
+			join user_permission on user_permission.permissionid = permission.id
+			join type_person on type_person.id = user_permission.type_personid
+			where user_permission.userid = 37 and type_person.id = 1
+			and sml1.date = (select max(sml2.date) from status_management_log as sml2
+							where sml1.permissionid = sml2.permissionid)
+            order by sml1.date desc;
+
+
+
+CREATE OR REPLACE FUNCTION public.add_status_management_log(
+	in var_permission_id integer, in var_status_id integer, in var_user_id integer, 
+	in var_comment text,in var_date_change_status timestamp without time zone, in var_date timestamp without time zone)
+    RETURNS setof void
+AS $BODY$
+begin
+insert into status_management_log(permissionid, statusid, userid, comment, date, date_change_status) 
+values(var_permission_id, var_status_id, var_user_id, var_comment, var_date, var_date_change_status);
+end;
+$BODY$
+LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.get_roles(
+	var_user_id integer)
+    RETURNS table(id integer, name character varying(100))
+AS $BODY$
+begin
+if var_user_id > 0  then
+ return query select role.id, role.name from role
+ join user_role on user_role.roleid = role.id
+ where user_role.userid = var_user_id;
+else 
+return query select role.id, role.name from role
+ join user_role on user_role.roleid = role.id;
+end if;
+end;
+$BODY$
+LANGUAGE plpgsql;
+
+
+
+CREATE OR REPLACE FUNCTION public.get_position(
+	var_name character(100))
+    RETURNS table(id integer, name character(100))
+AS $BODY$
+begin
+if var_name <> '' then
+ return query select position.id, position.name from position
+ where position.name = var_name;
+else 
+return query select position.id, position.name from position;
+end if;
+end;
+$BODY$
+LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION public.add_user(
+	var_name character varying(100),
+	var_lastname character varying(100),
+	var_patronymic character varying(100),
+	var_email character varying(100),
+	var_password character varying(100),
+	var_subdivision_id integer,
+	var_position_id integer,
+	var_mobile character(100),
+	var_mats character(100),
+	var_gats character(100),
+	var_dect character(100))
+    RETURNS setof void
+AS $BODY$
+begin
+insert into "user"(lastname, name, patronymic, email, password, subdivisionid, positionid, mobile, mats, gats, dect)
+values(var_name, var_lastname, var_patronymic, var_email, var_password, var_subdivision_id,
+	   var_position_id, var_mobile, var_mats, var_gats, var_dect);
+end;
+$BODY$
+LANGUAGE plpgsql;
+
+
+
+ CREATE OR REPLACE FUNCTION public.get_permission(
+	var_permission_id integer,
+	var_number character varying(100),
+	var_user_id integer,
+	var_search character varying(100),
+	var_date_start text,
+	var_date_end text,
+	var_status_id integer,
+	var_num_page integer)
+    RETURNS table(id integer, number character varying(100), description text, addition text, subdivision_name character varying(100),
+				 subdivision_id integer, untypical_work text, status_name character varying(100), status_id integer, status_management_log_id integer,
+				  status_management_log_comment text, date timestamp without time zone , date_change_status timestamp without time zone )
+AS $BODY$
+
+BEGIN
+if var_num_page > 0 then 
+		return query select distinct permission.id, permission.number, permission.description, permission.addition,
+		subdivision.name as subdivision_name, subdivision.id as subdivision_id, permission.untypical_work,
+		status.name as status_name, status.id as status_id, sml1.id as status_management_log_id,
+		sml1.comment as status_management_log_comment, sml1.date, sml1.date_change_status
+		from permission
+        join user_permission on user_permission.permissionid = permission.id
+		join subdivision on subdivision.id = permission.subdivisionid
+		join status_management_log as sml1 on sml1.permissionid =  permission.id
+		join status on status.id = sml1.statusid
+		where sml1.date = (select max(sml2.date) from status_management_log as sml2
+                               where sml1.permissionid = sml2.permissionid)
+		limit 2 offset (var_num_page - 1) * 2;
+ elseIF var_permission_id > 0 and var_user_id > 0 THEN
+        return query select distinct permission.id, permission.number, permission.description, permission.addition,
+		subdivision.name as subdivision_name, subdivision.id as subdivision_id, permission.untypical_work,
+		status.name as status_name, status.id as status_id, status_management_log.id as status_management_log_id,
+		status_management_log.comment as status_management_log_comment, status_management_log.date, status_management_log.date_change_status
+		from permission
+		join user_permission on user_permission.permissionid = permission.id
+		join subdivision on subdivision.id = permission.subdivisionid
+		join status_management_log on status_management_log.permissionid =  permission.id
+		join status on status.id = status_management_log.statusid
+		where permission.id = var_permission_id and user_permission.userid = var_user_id;
+    elseIF var_permission_id > 0 THEN
+        return query select distinct permission.id, permission.number, permission.description, permission.addition,
+		subdivision.name as subdivision_name, subdivision.id as subdivision_id, permission.untypical_work,
+		status.name as status_name, status.id as status_id, sml1.id as status_management_log_id,
+		sml1.comment as status_management_log_comment, sml1.date, sml1.date_change_status
+		from permission
+        join user_permission on user_permission.permissionid = permission.id
+		join subdivision on subdivision.id = permission.subdivisionid
+		join status_management_log as sml1 on sml1.permissionid =  permission.id
+		join status on status.id = sml1.statusid
+		where sml1.date = (select max(sml2.date) from status_management_log as sml2
+                               where sml1.permissionid = sml2.permissionid)
+		and permission.id = var_permission_id;
+    elseIF var_status_id > 0 and var_user_id > 0 THEN
+        return query select distinct permission.id, permission.number, permission.description, permission.addition,
+		subdivision.name as subdivision_name, subdivision.id as subdivision_id, permission.untypical_work,
+		status.name as status_name, status.id as status_id, sml1.id as status_management_log_id,
+		sml1.comment as status_management_log_comment, sml1.date, sml1.date_change_status
+		from permission
+		join user_permission on user_permission.permissionid = permission.id
+		join subdivision on subdivision.id = permission.subdivisionid
+		join status_management_log as sml1 on sml1.permissionid =  permission.id
+		join status on status.id = sml1.statusid
+		where sml1.date = (select max(sml2.date) from status_management_log as sml2
+                               where sml1.permissionid = sml2.permissionid)
+         and status.id = var_status_id
+         order by sml1.date desc;
+         elseif var_date_start <> '' and var_date_end <> '' and var_user_id > 0 then
+	return query select distinct permission.id, permission.number, permission.description, permission.addition,
+		subdivision.name as subdivision_name, subdivision.id as subdivision_id, permission.untypical_work,
+		status.name as status_name, status.id as status_id, sml1.id as status_management_log_id,
+		sml1.comment as status_management_log_comment, sml1.date, sml1.date_change_status
+		from permission
+        join subdivision on subdivision.id = permission.subdivisionid
+		join status_management_log as sml1 on sml1.permissionid =  permission.id
+		join status on status.id = sml1.statusid		
+        join user_permission on user_permission.permissionid = permission.id
+		where sml1.date = (select max(sml2.date) from status_management_log as sml2
+                               where sml1.permissionid = sml2.permissionid)
+        and user_permission.type_personid = 1
+		and user_permission.userid = var_user_id and
+		permission.id in (select permission.id from permission
+				 join date on date.permissionid = permission.id
+				 where date.date >= to_date(var_date_start, 'YYYY-MM-DD') and date.date <= to_date(var_date_end, 'YYYY-MM-DD'))
+                 order by sml1.date desc;
+		 elseif var_date_start <> '' and var_date_end <> '' and var_status_id > 0 then
+	return query select distinct permission.id, permission.number, permission.description, permission.addition,
+		subdivision.name as subdivision_name, subdivision.id as subdivision_id, permission.untypical_work,
+		status.name as status_name, status.id as status_id, sml1.id as status_management_log_id,
+		sml1.comment as status_management_log_comment, sml1.date, sml1.date_change_status
+		from permission
+        join subdivision on subdivision.id = permission.subdivisionid
+		join status_management_log as sml1 on sml1.permissionid =  permission.id
+		join status on status.id = sml1.statusid		
+        join user_permission on user_permission.permissionid = permission.id
+		where sml1.date = (select max(sml2.date) from status_management_log as sml2
+                               where sml1.permissionid = sml2.permissionid)
+		and status.id = var_status_id and
+		permission.id in (select permission.id from permission
+				 join date on date.permissionid = permission.id
+				 where date.date >= to_date(var_date_start, 'YYYY-MM-DD') and date.date <= to_date(var_date_end, 'YYYY-MM-DD'))
+                 order by sml1.date desc;
+        elseif var_date_start <> '' and var_date_end <> '' and var_search <> '' then
+	return query select distinct permission.id, permission.number, permission.description, permission.addition,
+		subdivision.name as subdivision_name, subdivision.id as subdivision_id, permission.untypical_work,
+		status.name as status_name, status.id as status_id, sml1.id as status_management_log_id,
+		sml1.comment as status_management_log_comment, sml1.date, sml1.date_change_status
+		from permission
+		join subdivision on subdivision.id = permission.subdivisionid
+		join status_management_log as sml1 on sml1.permissionid =  permission.id
+		join status on status.id = sml1.statusid		
+        join user_permission on user_permission.permissionid = permission.id
+        join "user" on "user".id = user_permission.userid
+        join type_person on type_person.id = user_permission.type_personid
+		where sml1.date = (select max(sml2.date) from status_management_log as sml2
+                               where sml1.permissionid = sml2.permissionid)
+		 and
+        permission.id in (select permission.id from permission
+				 join date on date.permissionid = permission.id
+				 where date.date >= to_date(var_date_start, 'YYYY-MM-DD') and date.date <= to_date(var_date_end, 'YYYY-MM-DD'))
+                 and  ((type_person.id = 3 and (lower("user".name) like lower(var_search) or lower("user".lastname) like lower(var_search) or lower("user".patronymic) like lower(var_search) 
+   or lower(concat("user".lastname, ' ', "user".name)) like lower(var_search)
+  or lower(concat("user".name, ' ', "user".lastname)) like lower(var_search)
+  or lower(concat("user".name, ' ', "user".patronymic)) like lower(var_search)
+    or lower(concat("user".patronymic, ' ', "user".name)) like lower(var_search)
+   or lower(concat("user".lastname, ' ', "user".name, ' ', "user".patronymic)) like lower(var_search)
+     or lower(concat("user".name, ' ', "user".lastname, ' ', "user".patronymic)) like lower(var_search)
+       or lower(concat("user".name, ' ', "user".patronymic, ' ', "user".lastname)) like lower(var_search)
+         or lower(concat("user".lastname, ' ', "user".patronymic, ' ', "user".name)) like lower(var_search)
+           or lower(concat("user".patronymic, ' ', "user".lastname, ' ', "user".name)) like lower(var_search)
+             or lower(concat("user".patronymic, ' ', "user".name, ' ', "user".lastname)) like lower(var_search)))
+        or permission.number  like var_search
+ 			or lower(subdivision.name) like lower(var_search))
+                 order by sml1.date desc;
+                 elseif var_date_start <> '' and var_date_end <> '' then
+	return query select distinct permission.id, permission.number, permission.description, permission.addition,
+		subdivision.name as subdivision_name, subdivision.id as subdivision_id, permission.untypical_work,
+		status.name as status_name, status.id as status_id, sml1.id as status_management_log_id,
+		sml1.comment as status_management_log_comment, sml1.date, sml1.date_change_status
+		from permission
+		join subdivision on subdivision.id = permission.subdivisionid
+		join status_management_log as sml1 on sml1.permissionid =  permission.id
+		join status on status.id = sml1.statusid		
+        join user_permission on user_permission.permissionid = permission.id
+		where sml1.date = (select max(sml2.date) from status_management_log as sml2
+                               where sml1.permissionid = sml2.permissionid)
+		 and
+        permission.id in (select permission.id from permission
+				 join date on date.permissionid = permission.id
+				 where date.date >= to_date(var_date_start, 'YYYY-MM-DD') and date.date <= to_date(var_date_end, 'YYYY-MM-DD'))
+                 order by sml1.date desc;
+	elseif var_date_start <> ''  then
+	return query select distinct permission.id, permission.number, permission.description, permission.addition,
+		subdivision.name as subdivision_name, subdivision.id as subdivision_id, permission.untypical_work,
+		status.name as status_name, status.id as status_id, sml1.id as status_management_log_id,
+		sml1.comment as status_management_log_comment, sml1.date, sml1.date_change_status
+		from permission
+		join subdivision on subdivision.id = permission.subdivisionid
+		join status_management_log as sml1 on sml1.permissionid =  permission.id
+		join status on status.id = sml1.statusid		
+        join user_permission on user_permission.permissionid = permission.id
+		where sml1.date = (select max(sml2.date) from status_management_log as sml2
+                               where sml1.permissionid = sml2.permissionid)
+                               and user_permission.userid = var_user_id and
+		permission.id in (select permission.id from permission
+				 join date on date.permissionid = permission.id
+				 where date.date >= to_date(var_date_start, 'YYYY-MM-DD'))
+                 order by sml1.date desc;
+    elseif var_date_end <> ''  then
+	return query select distinct permission.id, permission.number, permission.description, permission.addition,
+		subdivision.name as subdivision_name, subdivision.id as subdivision_id, permission.untypical_work,
+		status.name as status_name, status.id as status_id, sml1.id as status_management_log_id,
+		sml1.comment as status_management_log_comment, sml1.date, sml1.date_change_status
+		from permission
+		join subdivision on subdivision.id = permission.subdivisionid
+		join status_management_log as sml1 on sml1.permissionid =  permission.id
+		join status on status.id = sml1.statusid		
+        join user_permission on user_permission.permissionid = permission.id
+		where sml1.date = (select max(sml2.date) from status_management_log as sml2
+                               where sml1.permissionid = sml2.permissionid)
+                               and user_permission.userid = var_user_id and
+		permission.id in (select permission.id from permission
+				 join date on date.permissionid = permission.id
+				 where date.date <= to_date(var_date_end, 'YYYY-MM-DD'))
+                 order by sml1.date desc;
+	elseIF var_status_id > 0 THEN
+        return query select distinct permission.id, permission.number, permission.description, permission.addition,
+		subdivision.name as subdivision_name, subdivision.id as subdivision_id, permission.untypical_work,
+		status.name as status_name, status.id as status_id, sml1.id as status_management_log_id,
+		sml1.comment as status_management_log_comment, sml1.date, sml1.date_change_status
+		from permission
+		join user_permission on user_permission.permissionid = permission.id
+		join subdivision on subdivision.id = permission.subdivisionid
+		join status_management_log as sml1 on sml1.permissionid =  permission.id
+		join status on status.id = sml1.statusid
+		where sml1.date = (select max(sml2.date) from status_management_log as sml2
+                               where sml1.permissionid = sml2.permissionid)
+         and status.id = var_status_id
+         order by sml1.date desc;
+	elseIF var_number <> '' THEN
+        return query select distinct permission.id, permission.number, permission.description, permission.addition,
+		subdivision.name as subdivision_name, subdivision.id as subdivision_id, permission.untypical_work,
+		status.name as status_name, status.id as status_id, status_management_log.id as status_management_log_id,
+		status_management_log.comment as status_management_log_comment, status_management_log.date, status_management_log.date_change_status
+		from permission
+		join subdivision on subdivision.id = permission.subdivisionid
+		join status_management_log on status_management_log.permissionid =  permission.id
+		join status on status.id = status_management_log.statusid
+		where permission.number = var_number;
+    elseIF var_user_id > 0 THEN
+		if var_search = '' then
+			return query select distinct permission.id, permission.number, permission.description, permission.addition,
+			subdivision.name as subdivision_name, subdivision.id as subdivision_id, permission.untypical_work,
+			status.name as status_name, status.id as status_id, sml1.id as status_management_log_id,
+		sml1.comment as status_management_log_comment, sml1.date, sml1.date_change_status
+			from permission
+			join subdivision on subdivision.id = permission.subdivisionid
+			join status_management_log as sml1 on sml1.permissionid =  permission.id
+			join status on status.id = sml1.statusid
+			join user_permission on user_permission.permissionid = permission.id
+			join type_person on type_person.id = user_permission.type_personid
+			where user_permission.userid = var_user_id and type_person.id = 1
+			and sml1.date = (select max(sml2.date) from status_management_log as sml2
+							where sml1.permissionid = sml2.permissionid)
+            order by sml1.date desc;
+		else
+			return query select distinct permission.id, permission.number, permission.description, permission.addition,
+			subdivision.name as subdivision_name, subdivision.id as subdivision_id, permission.untypical_work,
+			status.name as status_name, status.id as status_id, sml1.id as status_management_log_id,
+		sml1.comment as status_management_log_comment, sml1.date, sml1.date_change_status
+			from permission
+			join subdivision on subdivision.id = permission.subdivisionid
+			join status_management_log as sml1 on sml1.permissionid =  permission.id
+			join status on status.id = sml1.statusid
+			join user_permission on user_permission.permissionid = permission.id
+			join type_person on type_person.id = user_permission.type_personid
+            join "user" on "user".id = user_permission.userid
+			where sml1.date = (select max(sml2.date) from status_management_log as sml2
+							where sml1.permissionid = sml2.permissionid)
+            and permission.id in (select user_permission.permissionid from user_permission
+							 where user_permission.userid = var_user_id) and
+ ((type_person.id = 3 and (lower("user".name) like lower(var_search) or lower("user".lastname) like lower(var_search) or lower("user".patronymic) like lower(var_search) 
+   or lower(concat("user".lastname, ' ', "user".name)) like lower(var_search)
+  or lower(concat("user".name, ' ', "user".lastname)) like lower(var_search)
+  or lower(concat("user".name, ' ', "user".patronymic)) like lower(var_search)
+    or lower(concat("user".patronymic, ' ', "user".name)) like lower(var_search)
+   or lower(concat("user".lastname, ' ', "user".name, ' ', "user".patronymic)) like lower(var_search)
+     or lower(concat("user".name, ' ', "user".lastname, ' ', "user".patronymic)) like lower(var_search)
+       or lower(concat("user".name, ' ', "user".patronymic, ' ', "user".lastname)) like lower(var_search)
+         or lower(concat("user".lastname, ' ', "user".patronymic, ' ', "user".name)) like lower(var_search)
+           or lower(concat("user".patronymic, ' ', "user".lastname, ' ', "user".name)) like lower(var_search)
+             or lower(concat("user".patronymic, ' ', "user".name, ' ', "user".lastname)) like lower(var_search)))
+        or permission.number  like var_search
+ 			or lower(subdivision.name) like lower(var_search))
+            order by sml1.date desc;
+		end if;
+    else 
+    return query select distinct permission.id, permission.number, permission.description, permission.addition,
+			subdivision.name as subdivision_name, subdivision.id as subdivision_id, permission.untypical_work,
+			status.name as status_name, status.id as status_id, sml1.id as status_management_log_id,
+		sml1.comment as status_management_log_comment, sml1.date, sml1.date_change_status
+			from permission
+			join subdivision on subdivision.id = permission.subdivisionid
+			join status_management_log as sml1 on sml1.permissionid =  permission.id
+			join status on status.id = sml1.statusid
+			join user_permission on user_permission.permissionid = permission.id
+			join type_person on type_person.id = user_permission.type_personid
+            join "user" on "user".id = user_permission.userid
+			where sml1.date = (select max(sml2.date) from status_management_log as sml2
+							where sml1.permissionid = sml2.permissionid)
+            and permission.id in (select permission.id from permission
+                                  join status_management_log on status_management_log.permissionid = permission.id
+                                  join status on status.id = status_management_log.statusid
+							 where status.id = 3) and
+ ((type_person.id = 3 and (lower("user".name) like lower(var_search) or lower("user".lastname) like lower(var_search) or lower("user".patronymic) like lower(var_search) 
+   or lower(concat("user".lastname, ' ', "user".name)) like lower(var_search)
+  or lower(concat("user".name, ' ', "user".lastname)) like lower(var_search)
+  or lower(concat("user".name, ' ', "user".patronymic)) like lower(var_search)
+    or lower(concat("user".patronymic, ' ', "user".name)) like lower(var_search)
+   or lower(concat("user".lastname, ' ', "user".name, ' ', "user".patronymic)) like lower(var_search)
+     or lower(concat("user".name, ' ', "user".lastname, ' ', "user".patronymic)) like lower(var_search)
+       or lower(concat("user".name, ' ', "user".patronymic, ' ', "user".lastname)) like lower(var_search)
+         or lower(concat("user".lastname, ' ', "user".patronymic, ' ', "user".name)) like lower(var_search)
+           or lower(concat("user".patronymic, ' ', "user".lastname, ' ', "user".name)) like lower(var_search)
+             or lower(concat("user".patronymic, ' ', "user".name, ' ', "user".lastname)) like lower(var_search)))
+        or permission.number  like var_search
+ 			or lower(subdivision.name) like lower(var_search))
+            order by sml1.date desc;
+    END IF;
+end;
+
+$BODY$
+LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION public.recovery_permission(
+	in var_id integer, in var_number character varying(100),
+							  in var_description text, in var_addition text,
+							  in var_subdivision_id integer, in var_untypical_work text)
+    RETURNS setof void
+AS $BODY$
+begin
+insert into permission(var_id, number, description, addition, subdivisionid, untypical_work) 
+OVERRIDING SYSTEM VALUE
+values(var_number, var_description, var_addition, var_subdivision_id, var_untypical_work);
+end;
+$BODY$
+LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION public.add_permission(
+	in var_id integer, in var_number character varying(100),
+							  in var_description text, in var_addition text,
+							  in var_subdivision_id integer, in var_untypical_work text)
+    RETURNS table(id int)
+    LANGUAGE 'sql'
+    COST 100
+    VOLATILE PARALLEL UNSAFE
+    ROWS 1000
+AS $BODY$
+insert into permission(number, description, addition, subdivisionid, untypical_work) values(var_number,
+							  var_description, var_addition, var_subdivision_id, var_untypical_work) returning permission.id;
+$BODY$;
+
+
+
+CREATE OR REPLACE FUNCTION public.update_permission(
+	in var_id integer, in var_number character varying(100),
+							  in var_description text, in var_addition text,
+							  in var_subdivision_id integer,
+							  in var_untypical_work text)
+    RETURNS void
+AS $BODY$
+begin
+update permission
+set number = var_number, description = var_description, addition = var_addition,
+subdivisionid = var_subdivision_id, untypical_work = var_untypical_work
+where permission.id = var_id;
+end;
+$BODY$
+LANGUAGE plpgsql;
+
+
+
+
+CREATE OR REPLACE FUNCTION public.add_responsible(
+	var_responsible_id integer,
+	var_permission_id integer,
+	var_type_person_id integer)
+    RETURNS setof void
+AS $BODY$
+begin
+insert into user_permission(userid, permissionid, type_personid)
+values(var_responsible_id, var_permission_id, var_permission_id);
+end;
+$BODY$
+LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.get_employee(
+	var_type_person_id integer,
+	var_permission_id integer,
+	var_user_id integer)
+    RETURNS table(user_id integer, lastname character varying(100), name character varying(100),
+				 patronymic character varying(100), user_position character(100),
+				 email character varying(100), subdivision_name character varying(100),
+				 subdivision_id integer, subdivision_parent_id integer,
+				 permission_id integer, type_person_id integer, type_person_name character(100))
+AS $BODY$
+begin
+if var_type_person_id > 0 and var_permission_id > 0 and var_user_id > 0 then
+	return query select "user".id as user_id, "user".lastname, "user".name, "user".patronymic, position.name as user_position,
+	"user".email, subdivision.name as subdivision_name, subdivision.id as subdivision_id, 
+	subdivision.subdivisionid as subdivision_parent_id, user_permission.permissionid as permission_id, 
+	user_permission.type_personid as type_person_id, type_person.name as type_person_name
+	from "user"
+	join user_permission on user_permission.userid = "user".id
+	join subdivision on subdivision.id = "user".subdivisionid
+	join type_person on type_person.id = user_permission.type_personid
+    join position on position.id = "user".positionid
+	where user_permission.type_personid = var_type_person_id
+	and user_permission.permissionid = var_permission_id
+	and user_permission.userid = var_user_id;
+elseif var_type_person_id > 0 and var_permission_id > 0 then
+	return query select "user".id as user_id, "user".lastname, "user".name, "user".patronymic, position.name as user_position,
+	"user".email, subdivision.name as subdivision_name, subdivision.id as subdivision_id, 
+	subdivision.subdivisionid as subdivision_parent_id, user_permission.permissionid as permission_id,
+	user_permission.type_personid as type_person_id, type_person.name as type_person_name
+	from "user"
+	join user_permission on user_permission.userid = "user".id
+	join subdivision on subdivision.id = "user".subdivisionid
+	join type_person on type_person.id = user_permission.type_personid
+    join position on position.id = "user".positionid
+	where user_permission.type_personid = var_type_person_id
+	and user_permission.permissionid = var_permission_id;
+elseif var_permission_id > 0 then
+	return query select "user".id as user_id, "user".lastname, "user".name, "user".patronymic, position.name as user_position,
+	"user".email, subdivision.name as subdivision_name, subdivision.id as subdivision_id, 
+	subdivision.subdivisionid as subdivision_parent_id, user_permission.permissionid as permission_id, 
+	user_permission.type_personid as type_person_id, type_person.name as type_person_name
+	from "user"
+	join user_permission on user_permission.userid = "user".id
+	join subdivision on subdivision.id = "user".subdivisionid
+	join type_person on type_person.id = user_permission.type_personid
+    join position on position.id = "user".positionid
+	where user_permission.permissionid = var_permission_id;
+else
+	return query select "user".id as user_id, "user".lastname, "user".name, "user".patronymic, position.name as user_position,
+	"user".email, subdivision.name as subdivision_name, subdivision.id as subdivision_id, 
+	subdivision.subdivisionid as subdivision_parent_id, user_permission.permissionid as permission_id,
+	user_permission.type_personid as type_person_id, type_person.name as type_person_name
+	from "user"
+	join user_permission on user_permission.userid = "user".id
+	join subdivision on subdivision.id = "user".subdivisionid
+	join type_person on type_person.id = user_permission.type_personid
+    join position on position.id = "user".positionid
+	where user_permission.type_personid = var_type_person_id;
+end if;
+end;
+$BODY$
+LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.get_responsibles(
+	var_permission_id integer,
+	var_role_id integer,
+	var_search character varying(100))
+    RETURNS table(id integer, name character varying(100), lastname character varying(100),
+				 patronymic character varying(100), email character varying(100),
+				 "position" character varying(100), subdivision_name character varying(100),
+				 department_name character varying(100))
+AS $BODY$
+begin
+if var_search = '' then
+ return query select "user".id, "user".name, "user".lastname, "user".patronymic, "user".email, "user".position,
+subdivision.name as subdivision_name, department.name as department_name from "user"
+join user_role on user_role.userid = "user".id
+join user_permission on user_permission.userid = "user".id
+join subdivision on subdivision.id = "user".subdivisionid
+join department on department.id = "user".departmentid
+where user_role.roleid = var_role_id 
+and user_permission.permissionid = var_permission_id;
+else 
+return query select DISTINCT "user".id, "user".name, "user".lastname, "user".patronymic, "user".email, "user".position,
+subdivision.name as subdivision_name, department.name as department_name from "user"
+join user_role on user_role.userid = "user".id
+join user_permission on user_permission.userid = "user".id
+join subdivision on subdivision.id = "user".subdivisionid
+join department on department.id = "user".departmentid
+where user_role.roleid = var_role_id
+and (lower("user".name) like lower(var_search) or lower("user".lastname) like lower(var_search) or lower("user".patronymic) like lower(var_search) 
+or lower(concat("user".lastname, ' ', "user".name)) like lower(var_search)
+or lower(concat("user".name, ' ', "user".lastname)) like lower(var_search)
+or lower(concat("user".name, ' ', "user".patronymic)) like lower(var_search)
+or lower(concat("user".patronymic, ' ', "user".name)) like lower(var_search)
+or lower(concat("user".lastname, ' ', "user".name, ' ', "user".patronymic)) like lower(var_search)
+ or lower(concat("user".name, ' ', "user".lastname, ' ', "user".patronymic)) like lower(var_search)
+or lower(concat("user".name, ' ', "user".patronymic, ' ', "user".lastname)) like lower(var_search)
+ or lower(concat("user".lastname, ' ', "user".patronymic, ' ', "user".name)) like lower(var_search)
+or lower(concat("user".patronymic, ' ', "user".lastname, ' ', "user".name)) like lower(var_search)
+ or lower(concat("user".patronymic, ' ', "user".name, ' ', "user".lastname)) like lower(var_search));
+end if;
+end;
+$BODY$
+LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.del_responsible(
+	var_user_id integer,
+	var_permission_id integer,
+	var_type_person_id integer)
+    RETURNS setof void
+AS $BODY$
+begin
+if var_user_id > 0 then
+delete from user_permission 
+where user_permission.userid = var_user_id and user_permission.permissionid = var_permission_id and
+user_permission.type_personid = var_type_person_id;
+else 
+delete from user_permission 
+where user_permission.permissionid = var_permission_id and
+user_permission.type_personid = var_type_person_id;
+end if;
+end; 
+$BODY$
+LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.get_subdivisions(
+	var_role_id integer)
+    RETURNS table(id int, name character varying(100), parent_id int)
+AS $BODY$
+begin
+	return query select subdivision.id, subdivision.name, subdivision.subdivisionid as parent_id from "user"
+	join user_role on user_role.userid = "user".id
+	join role on role.id = user_role.roleid
+	join subdivision on subdivision.id = "user".subdivisionid
+	where role.id = var_role_id;
+end;
+$BODY$
+LANGUAGE plpgsql;
+
+
+
+CREATE OR REPLACE FUNCTION public.get_users(
+	var_user_id integer,
+	var_email character varying(100),
+	var_role_id integer,
+	var_subdivision_id integer,
+	var_search character varying(100),
+	var_position_id integer)
+    RETURNS TABLE(user_id integer, lastname character varying, name character varying, 
+				  patronymic character varying, user_position character(100),
+				  email character varying, password character varying, role_name character varying, 
+				  subdivision_name character varying, subdivision_id integer, subdivision_parent_id integer)
+AS $BODY$
+
+
+begin
+if var_search <> '' and var_role_id > 0 then
+return query select distinct "user".id as user_id, "user".lastname, "user".name, "user".patronymic, position.name as user_position,
+	"user".email, "user".password, role.name as role_name, subdivision.name as subdivision_name, subdivision.id as subdivision_id, subdivision.subdivisionid as parent_subdivision_id from "user"
+	join user_role on user_role.userid = "user".id
+	join role on role.id = user_role.roleid
+	join subdivision on subdivision.id = "user".subdivisionid
+    join position on position.id = "user".positionid
+	where role.id = var_role_id 
+	and (lower("user".name) like lower(var_search) or lower("user".lastname) like lower(var_search) or lower("user".patronymic) like lower(var_search) 
+or lower(concat("user".lastname, ' ', "user".name)) like lower(var_search)
+or lower(concat("user".name, ' ', "user".lastname)) like lower(var_search)
+or lower(concat("user".name, ' ', "user".patronymic)) like lower(var_search)
+or lower(concat("user".patronymic, ' ', "user".name)) like lower(var_search)
+or lower(concat("user".lastname, ' ', "user".name, ' ', "user".patronymic)) like lower(var_search)
+ or lower(concat("user".name, ' ', "user".lastname, ' ', "user".patronymic)) like lower(var_search)
+or lower(concat("user".name, ' ', "user".patronymic, ' ', "user".lastname)) like lower(var_search)
+ or lower(concat("user".lastname, ' ', "user".patronymic, ' ', "user".name)) like lower(var_search)
+or lower(concat("user".patronymic, ' ', "user".lastname, ' ', "user".name)) like lower(var_search)
+ or lower(concat("user".patronymic, ' ', "user".name, ' ', "user".lastname)) like lower(var_search));
+elseIF var_user_id > 0 then
+	return query select "user".id as user_id, "user".lastname, "user".name, "user".patronymic, position.name as user_position,
+	"user".email, "user".password, role.name as role_name, subdivision.name as subdivision_name, subdivision.id as subdivision_id, subdivision.subdivisionid as parent_subdivision_id from "user"
+	join user_role on user_role.userid = "user".id
+	join role on role.id = user_role.roleid
+	join subdivision on subdivision.id = "user".subdivisionid
+     join position on position.id = "user".positionid
+	where "user".id = var_user_id;
+elseif var_subdivision_id > 0 and var_position_id > 0 then
+	return query select distinct "user".id as user_id, "user".lastname, "user".name, "user".patronymic, position.name as user_position,
+	"user".email, "user".password, role.name as role_name, subdivision.name as subdivision_name, subdivision.id as subdivision_id, subdivision.subdivisionid as parent_subdivision_id from "user"
+	join user_role on user_role.userid = "user".id
+	join role on role.id = user_role.roleid
+	join subdivision on subdivision.id = "user".subdivisionid
+     join position on position.id = "user".positionid
+	where subdivision.id = var_subdivision_id
+	and position.id = var_position_id;
+elseif var_subdivision_id > 0 then
+	return query select distinct "user".id as user_id, "user".lastname, "user".name, "user".patronymic, position.name as user_position,
+	"user".email, "user".password, role.name as role_name, subdivision.name as subdivision_name, subdivision.id as subdivision_id, subdivision.subdivisionid as parent_subdivision_id from "user"
+	join user_role on user_role.userid = "user".id
+	join role on role.id = user_role.roleid
+	join subdivision on subdivision.id = "user".subdivisionid
+     join position on position.id = "user".positionid
+	where subdivision.id = var_subdivision_id;
+elseif var_email <> '' then
+	return query select distinct "user".id as user_id, "user".lastname, "user".name, "user".patronymic, position.name,
+	"user".email, "user".password, role.name as role_name, subdivision.name as subdivision_name, subdivision.id as subdivision_id, subdivision.subdivisionid as parent_subdivision_id from "user"
+	join user_role on user_role.userid = "user".id
+	join role on role.id = user_role.roleid
+	join subdivision on subdivision.id = "user".subdivisionid
+     join position on position.id = "user".positionid
+	where "user".email = var_email;
+end if;
+end;
+$BODY$
+LANGUAGE plpgsql;
+
+
+
+CREATE OR REPLACE FUNCTION public.get_responsibles(
+	var_type_person_id integer,
+	var_permission_id integer,
+	var_user_id integer)
+    RETURNS TABLE(user_id integer, lastname character varying, name character varying, 
+				  patronymic character varying, user_position character varying, 
+				  email character varying, subdivision_name character(100),
+				  subdivision_id integer, subdivision_parent_id integer,
+				  department_name character varying, permission_id integer, 
+				  type_person_id integer, type_person_name character(100))
+AS $BODY$
+
+begin
+if var_type_person_id > 0 and var_permission_id > 0 and var_user_id > 0 then
+	return query select "user".id as user_id, "user".lastname, "user".name, "user".patronymic, position.name as user_position,
+	"user".email, subdivision.name as subdivision_name, subdivision.id as subdivision_id, 
+	subdivision.subdivisionid as subdivision_parent_id, department.name as department_name, 
+	user_permission.permissionid as permission_id, user_permission.type_personid as type_person_id, type_person.name as type_person_name
+	from "user"
+	join user_permission on user_permission.userid = "user".id
+	join subdivision on subdivision.id = "user".subdivisionid
+	join department on department.id = "user".departmentid
+	join type_person on type_person.id = user_permission.type_personid
+    join position on position.id = "user".positionid
+	where user_permission.type_personid = var_type_person_id
+	and user_permission.permissionid = var_permission_id
+	and user_permission.userid = var_user_id;
+elseif var_type_person_id > 0 and var_permission_id > 0 then
+	return query select "user".id as user_id, "user".lastname, "user".name, "user".patronymic, position.name as user_position,
+	"user".email, subdivision.name as subdivision_name, subdivision.id as subdivision_id, 
+	subdivision.subdivisionid as subdivision_parent_id, department.name as department_name, 
+	user_permission.permissionid as permission_id, user_permission.type_personid as type_person_id, type_person.name as type_person_name
+	from "user"
+	join user_permission on user_permission.userid = "user".id
+	join subdivision on subdivision.id = "user".subdivisionid
+	join department on department.id = "user".departmentid
+	join type_person on type_person.id = user_permission.type_personid
+    join position on position.id = "user".positionid
+	where user_permission.type_personid = var_type_person_id
+	and user_permission.permissionid = var_permission_id;
+elseif var_permission_id > 0 then
+	return query select "user".id as user_id, "user".lastname, "user".name, "user".patronymic, position.name as user_position,
+	"user".email, subdivision.name as subdivision_name, subdivision.id as subdivision_id, 
+	subdivision.subdivisionid as subdivision_parent_id, department.name as department_name, 
+	user_permission.permissionid as permission_id, user_permission.type_personid as type_person_id, type_person.name as type_person_name
+	from "user"
+	join user_permission on user_permission.userid = "user".id
+	join subdivision on subdivision.id = "user".subdivisionid
+	join department on department.id = "user".departmentid
+	join type_person on type_person.id = user_permission.type_personid
+    join position on position.id = "user".positionid
+	where user_permission.permissionid = var_permission_id;
+else
+	return query select "user".id as user_id, "user".lastname, "user".name, "user".patronymic, position.name as user_position,
+	"user".email, subdivision.name as subdivision_name, subdivision.id as subdivision_id, 
+	subdivision.subdivisionid as subdivision_parent_id, department.name as department_name,
+	user_permission.permissionid as permission_id, user_permission.type_personid as type_person_id, type_person.name as type_person_name
+	from "user"
+	join user_permission on user_permission.userid = "user".id
+	join subdivision on subdivision.id = "user".subdivisionid
+	join department on department.id = "user".departmentid
+	join type_person on type_person.id = user_permission.type_personid
+    join position on position.id = "user".positionid
+	where user_permission.type_personid = var_type_person_id;
+end if;
+end;
+$BODY$
+LANGUAGE plpgsql;
+
+
+
+CREATE OR REPLACE FUNCTION public.del_permission(
+	var_permission_id integer)
+    RETURNS setof void
+AS $BODY$
+begin
+delete from date 
+where date.permissionid = var_permission_id;
+delete from permission__typical_work 
+where permission__typical_work.permissionid = var_permission_id;
+delete from user_permission 
+where user_permission.permissionid = var_permission_id;
+delete from permission 
+where permission.id = var_permission_id;
+end; 
+$BODY$
+LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION public.get_dates(in var_permission_id integer, in var_user_id integer)
+    RETURNS table(permissionid int, date text, from_time character varying(100), to_time character varying(100))
+AS $BODY$
+begin
+if var_permission_id > 0 then
+	return query    SELECT distinct permission.id as permissionid,
+   (Select to_char(date.date, 'dd.mm.YYYY')),
+    date.from_time,
+    date.to_time
+   FROM permission
+     JOIN date ON date.permissionid = permission.id
+	 JOIN user_permission ON user_permission.permissionid = permission.id
+	 join type_person on type_person.id = user_permission.type_personid
+	where user_permission.permissionid = var_permission_id
+	and type_person.id = 1;
+else
+return query    SELECT distinct http://trans/date permission.id as permissionid,
+   (Select to_char(date.date, 'dd.mm.YYYY')),
+    date.from_time,
+    date.to_time
+   FROM permission
+     JOIN date ON date.permissionid = permission.id
+	 JOIN user_permission ON user_permission.permissionid = permission.id
+	 join type_person on type_person.id = user_permission.type_personid
+	where user_permission.userid = var_user_id
+	and type_person.id = 1;
+end if;
+end;
+$BODY$
+LANGUAGE plpgsql;
+
+
+
+CREATE OR REPLACE FUNCTION public.get_typical_work(
+	var_permission_id integer,
+	var_user_id integer,
+	var_flag integer)
+    RETURNS TABLE(typical_work_id integer, name character, description text, permission_id integer)
+AS $BODY$
+begin
+if var_permission_id > 0 then
+	return query select typical_work.id as typical_work_id, typical_work.name, 
+	permission__typical_work.description, permission__typical_work.permissionid as permission_id
+	from permission__typical_work
+	join typical_work on typical_work.id = permission__typical_work.typical_workid
+	where permission__typical_work.permissionid = var_permission_id;
+elseif var_user_id > 0 then
+	return query select distinct typical_work.id as typical_work_id, typical_work.name, 
+	permission__typical_work.description, permission__typical_work.permissionid as permission_id
+	from user_permission
+	join permission on permission.id = user_permission.permissionid
+	join permission__typical_work on permission__typical_work.permissionid = permission.id
+	join typical_work on typical_work.id = permission__typical_work.typical_workid
+	where user_permission.userid = var_user_id;
+elseif var_flag = 1 then
+	return query select distinct typical_work.id as typical_work_id, typical_work.name, 
+	permission__typical_work.description as decription, user_permission.permissionid as permission_id
+	from  typical_work
+	join permission__typical_work on permission__typical_work.typical_workid = typical_work.id
+	join user_permission on user_permission.userid = permission__typical_work.permissionid
+	join type_person on type_person.id = user_permission.type_personid
+    JOIN date ON date.permissionid = user_permission.permissionid
+    join status_management_log as sml1 on sml1.permissionid = user_permission.permissionid	
+	where sml1.date = (select max(sml2.date) from status_management_log as sml2
+                        where sml1.permissionid = sml2.permissionid)
+    and sml1.statusid > 1
+	and type_person.id = 1;
+else 
+	return query select distinct typical_work.id as typical_work_id, typical_work.name, 
+	'' as decription, 0 as permission_id
+	from  typical_work;
+end if;
+end;
+$BODY$
+LANGUAGE plpgsql;
+
+
+
+CREATE OR REPLACE FUNCTION public.del_typical_work(
+	var_permission_id integer,
+	var_typical_work_id integer)
+    RETURNS setof void
+AS $BODY$
+begin
+if var_permission_id > 0 and var_typical_work_id > 0 then
+delete from permission__typical_work 
+where permission__typical_work.permissionid = var_permission_id
+and permission__typical_work.typical_workid = var_typical_work_id;
+elseif var_permission_id > 0 then
+delete from permission__typical_work 
+where permission__typical_work.permissionid = var_permission_id;
+else
+delete from permission__typical_work 
+where permission__typical_work.typical_workid = var_typical_work_id;
+end if;
+end;
+$BODY$
+LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.add_typical_work(
+	var_permission_id integer,
+	var_typical_work_id integer,
+	var_description text)
+    RETURNS setof void
+AS $BODY$
+begin
+insert into permission__typical_work values(var_permission_id, var_typical_work_id, var_description);
+end;
+$BODY$
+LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.update_permission__typical_work(
+	var_permission_id integer,
+	var_typical_work_id integer,
+	var_description text)
+    RETURNS setof void
+AS $BODY$
+begin
+update permission__typical_work set description =  var_description
+where permissionid = var_permission_id and typical_workid = var_typical_work_id;
+end;
+$BODY$
+LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION public.get_subdivision(
+	var_subdivision_id integer,
+	var_parent_id integer,
+	var_user_id integer)
+    RETURNS TABLE(id integer, name character varying(100), parent_id integer)
+AS $BODY$
+begin
+if var_subdivision_id > 0 then
+	return query select subdivision.id, subdivision.name, subdivision.subdivisionid as parent_id
+	from subdivision
+	where subdivision.id = var_subdivision_id;
+elseif var_parent_id > 0 then 
+	return query select subdivision.id, subdivision.name, subdivision.subdivisionid as parent_id 
+	from subdivision
+	where subdivision.subdivisionid = var_parent_id;
+elseif var_user_id > 0 then 
+	return query select subdivision.id, subdivision.name, subdivision.subdivisionid as parent_id 
+	from subdivision
+	join "user" on "user".subdivisionid = subdivision.id
+	where "user".id = var_user_id;
+else 
+	return query select subdivision.id, subdivision.name, subdivision.subdivisionid as parent_id 
+	from subdivision
+	where subdivision.subdivisionid is null;
+end if;
+end;
+$BODY$
+LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.get_type_person(
+	var_type_person_id integer)
+    RETURNS TABLE(id integer, name character(100))
+AS $BODY$
+begin
+return query select type_person.id, type_person.name from type_person 
+where type_person.id = var_type_person_id;
+end;
+$BODY$
+LANGUAGE plpgsql;
