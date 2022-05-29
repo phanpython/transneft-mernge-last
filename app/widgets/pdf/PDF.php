@@ -16,6 +16,7 @@ class PDF
     protected object $date;
     protected object $employee;
     protected object $typicalWork;
+    protected object $protection;
     protected object $permission;
     protected object $user;
     protected int $permissionId;
@@ -27,12 +28,14 @@ class PDF
         $this->date = new Date($db);
         $this->user = new User($db);
         $this->employee = new Employee($db);
+        $this->protection = new Protection($db);
         $this->typicalWork = new TypicalWork($db);
         $this->permission = new Permission($db);
     }
 
     public function download() {
         $permission = $this->permission->getPermission($this->permissionId)[0];
+        echo($_SESSION['idCurrentPermission']);
         $supervisor = $this->employee->getEmployee(5, $_SESSION['idCurrentPermission'])[0];
         $supervisorFIO = $this->getFIO($supervisor['name'], $supervisor['lastname'], $supervisor['patronymic']);
 
@@ -62,6 +65,35 @@ class PDF
         );
         $this->mpdf->WriteHTML($html);
         $this->mpdf->Output("wefwef.pdf", 'I');
+    }
+
+    protected function getSecondPart($untypicalWorks = ''):string {
+        $typicalWorks = $this->typicalWork->getTypicalWork($this->permissionId);
+
+        $result = "<div style='margin: 0 0 5px 0;font-weight: bold;'>2. Наименование работ, основание для выполнения работ</div>";
+        $result .= "<table style='margin: 0 0 0 17px; width: 100%;' border='0' cellspacing='0' cellpadding='0'>
+                    <thead>
+                      <tr>
+                         <td style='width: 40%; border: 1px solid #000;text-align: center;padding: 5px;'>Наименование работ</td>
+                         <td style='width: 40%; border: 1px solid #000;text-align: center;padding: 5px;'>Комментарий</td>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                         <td style='width: 40%; border: 1px solid #000;padding: 5px;'>$untypicalWorks</td>
+                         <td style='width: 40%; border: 1px solid #000;padding: 5px;'></td>
+                      </tr>";
+
+        foreach ($typicalWorks as $typicalWork) {
+            $result .= "<tr>
+                         <td style='width: 40%; border: 1px solid #000; padding: 5px;'>{$typicalWork['name']}</td>
+                         <td style='width: 40%; border: 1px solid #000;padding: 5px;'>{$typicalWork['description']}</td>
+                      </tr>";
+        }
+
+        $result .= "</tbody></table>";
+
+        return $result;
     }
 
     protected function getHeader($number) {
@@ -105,33 +137,117 @@ class PDF
         return $result;
     }
 
-    protected function getSecondPart($untypicalWorks = ''):string {
-        $typicalWorks = $this->typicalWork->getTypicalWork($this->permissionId);
-
-        $result = "<div style='margin: 0 0 5px 0;font-weight: bold;'>2. Наименование работ, основание для выполнения работ</div>";
-        $result .= "<table style='margin: 0 0 0 17px; width: 100%;' border='0' cellspacing='0' cellpadding='0'>
+    protected function getMasksPart($untypicalWorks = ''):string {
+        $protections = $this->prepareInfoAboutMaskingProtections($this->permission->getProtectionsOfPermission($this->permissionId));
+        echo($protections[0]['typeid']);
+        $result = "<div style='margin: 0 0 5px 0;font-weight: bold;'>Карта маскирования</div>";
+        $result .= "<table style='margin: 0 0 0 17px; width: 100%;' border='0' cellspacing='0' cellpadding='0' style='min-height: 1000px;'>
                     <thead>
-                      <tr>
-                         <td style='width: 40%; border: 1px solid #000;text-align: center;padding: 5px;'>Наименование работ</td>
-                         <td style='width: 40%; border: 1px solid #000;text-align: center;padding: 5px;'>Комментарий</td>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                         <td style='width: 40%; border: 1px solid #000;padding: 5px;'>$untypicalWorks</td>
-                         <td style='width: 40%; border: 1px solid #000;padding: 5px;'></td>
-                      </tr>";
-
-        foreach ($typicalWorks as $typicalWork) {
-            $result .= "<tr>
-                         <td style='width: 40%; border: 1px solid #000; padding: 5px;'>{$typicalWork['name']}</td>
-                         <td style='width: 40%; border: 1px solid #000;padding: 5px;'>{$typicalWork['description']}</td>
-                      </tr>";
+                        <tr>
+                            <td style='width: 40%; border: 1px solid #000;text-align: center;padding: 5px;'>Защита</td>
+                            <td style='width: 40%; border: 1px solid #000;text-align: center;padding: 5px;'>Маскирование</td>
+                            <td style='width: 40%; border: 1px solid #000;text-align: center;padding: 5px;'>Проверка маскирования</td>
+                            <td style='width: 40%; border: 1px solid #000;text-align: center;padding: 5px;'>Демаскирование</td>
+                            <td style='width: 40%; border: 1px solid #000;text-align: center;padding: 5px;'>Проверка демаскирования</td>
+                        </tr>";
+                $result .= "<tr>
+                                <td style='width: 100%; border: 1px solid #000;text-align: center;padding: 5px;' colspan='5'>ЦСПА</td>
+                            </tr >
+                            </thead style='margin-bottom: 10px;'>";
+        foreach ($protections as $protection) {
+            if($protection['system_apcs_name'] == 'ЦСПА'){
+                $result .= "<tbody>
+                    <tr>
+                        <td style='width: 40%; border: 1px solid #000; padding: 5px;'>{$protection['protection_name']}</td>
+                        <td style='width: 40%; border: 1px solid #000;text-align: center;padding: 5px;'>{$protection['masking_view']}</td>
+                        <td style='width: 40%; border: 1px solid #000;text-align: center;padding: 5px;'>{$protection['check_masking_view']}</td>
+                        <td style='width: 40%; border: 1px solid #000;text-align: center;padding: 5px;'>{$protection['unmasking_view']}</td>
+                        <td style='width: 40%; border: 1px solid #000;text-align: center;padding: 5px;'>{$protection['check_unmasking_view']}</td>
+                    </tr>";
+            } 
         }
+        $result .= "<tr>
+                            <td style='width: 100%; border: 1px solid #000;text-align: center;padding: 5px;' colspan='5'>Общестанционные</td>
+                        </tr>
+                    </thead>";
+        foreach ($protections as $protection) {
+            if($protection['typeid'] == 3){
+                $result .= "<tbody>
+                            <tr>
+                                <td style='width: 40%; border: 1px solid #000; padding: 5px;'>{$protection['protection_name']}</td>
+                                <td style='width: 40%; border: 1px solid #000;text-align: center;padding: 5px;'>{$protection['masking_view']}</td>
+                                <td style='width: 40%; border: 1px solid #000;text-align: center;padding: 5px;'>{$protection['check_masking_view']}</td>
+                                <td style='width: 40%; border: 1px solid #000;text-align: center;padding: 5px;'>{$protection['unmasking_view']}</td>
+                                <td style='width: 40%; border: 1px solid #000;text-align: center;padding: 5px;'>{$protection['check_unmasking_view']}</td>
+                            </tr>";
+            } 
+        }
+            $result .= "<tr>
+                                <td style='width: 100%; border: 1px solid #000;text-align: center;padding: 5px;' colspan='5'>Агрегатные</td>
+                            </tr>
+                        </thead>";
+        foreach ($protections as $protection) {
+            if($protection['typeid'] == 4){
+                $result .= "<tbody>
+                    <tr>
+                        <td style='width: 40%; border: 1px solid #000; padding: 5px;'>{$protection['protection_name']}</td>
+                        <td style='width: 40%; border: 1px solid #000;text-align: center;padding: 5px;'>{$protection['masking_view']}</td>
+                        <td style='width: 40%; border: 1px solid #000;text-align: center;padding: 5px;'>{$protection['check_masking_view']}</td>
+                        <td style='width: 40%; border: 1px solid #000;text-align: center;padding: 5px;'>{$protection['unmasking_view']}</td>
+                        <td style='width: 40%; border: 1px solid #000;text-align: center;padding: 5px;'>{$protection['check_unmasking_view']}</td>
+                    </tr>";
+            } 
+        }
+            $result .= "<tr>
+                            <td style='width: 100%; border: 1px solid #000;text-align: center;padding: 5px;' colspan='5'>СОУ</td>
+                        </tr>
+                        </thead>";
+        foreach ($protections as $protection) {
+            if($protection['system_apcs_name'] == 'СОУ'){
+                $result .= "<tbody>
+                    <tr>
+                        <td style='width: 40%; border: 1px solid #000; padding: 5px;'>{$protection['protection_name']}</td>
+                        <td style='width: 40%; border: 1px solid #000;text-align: center;padding: 5px;'>{$protection['masking_view']}</td>
+                        <td style='width: 40%; border: 1px solid #000;text-align: center;padding: 5px;'>{$protection['check_masking_view']}</td>
+                        <td style='width: 40%; border: 1px solid #000;text-align: center;padding: 5px;'>{$protection['unmasking_view']}</td>
+                        <td style='width: 40%; border: 1px solid #000;text-align: center;padding: 5px;'>{$protection['check_unmasking_view']}</td>
+                    </tr>";
+            } 
+        }
+    
 
         $result .= "</tbody></table>";
 
         return $result;
+    }
+
+    protected function prepareInfoAboutMaskingProtections($protections) {
+        foreach ($protections as &$protection) {
+            if($protection['masking'] == 1) {
+                $protection['masking_view'] = '+';
+            } else {
+                $protection['masking_view'] = '';
+            }
+
+            if($protection['check_masking'] == 1) {
+                $protection['check_masking_view'] = '+';
+            } else {
+                $protection['check_masking_view'] = '';
+            }
+
+            if($protection['unmasking'] == 1) {
+                $protection['unmasking_view'] = '+';
+            } else {
+                $protection['unmasking_view'] = '';
+            }
+            if($protection['check_unmasking'] == 1) {
+                $protection['check_unmasking_view'] = '+';
+            } else {
+                $protection['check_unmasking_view'] = '';
+            }
+        }
+
+        return $protections;
     }
 
     protected function getThirdPart():string {
@@ -265,5 +381,34 @@ class PDF
         $month = date('n')-1;
         $date = date('d').' '.$arr[$month].' '.date('Y') . 'г.';
         return $date;
+    }
+
+
+
+
+    public function downloadMasks() {
+        $permission = $this->permission->getPermission($this->permissionId)[0];
+        $supervisor = $this->employee->getEmployee(5, $_SESSION['idCurrentPermission'])[0];
+        $supervisorFIO = $this->getFIO($supervisor['name'], $supervisor['lastname'], $supervisor['patronymic']);
+
+        $header = $this->getHeader($permission['number']);
+        $this->mpdf->SetHTMLHeader($header);
+
+        $footer = $this->getFooter();
+        $this->mpdf->SetHTMLFooter($footer);
+
+        $html = $this->getMasksPart($permission['untypical_work']);
+
+        $this->mpdf->AddPage('', // L - landscape, P - portrait
+            '', '', '', '',
+            15, // margin_left
+            15, // margin right
+            40, // margin top
+            30, // margin bottom
+            10, // margin header
+            10  // margin footer
+        );
+        $this->mpdf->WriteHTML($html);
+        $this->mpdf->Output("wefwef.pdf", 'I');
     }
 }

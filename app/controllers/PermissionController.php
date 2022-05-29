@@ -72,7 +72,10 @@ class PermissionController extends AppController
             $this->model->addStatusOfPermission($_POST['id'], 16);
         }  elseif(isset($_POST['pdf'])) {
             $this->model->downloadPDF($_POST['id']);
+        } elseif(isset($_POST['pdf-masks'])) {
+            $this->model->downloadMasksPDF($_POST['id']);
         }
+        
 
         $this->setIndexVarsToTwig();
     }

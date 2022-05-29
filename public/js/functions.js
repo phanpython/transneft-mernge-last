@@ -156,7 +156,6 @@ function setMaskTime() {
 }
 
 
-/* Дима */
 
 function setObjectsForTree(id, elem, input){
     if (id > 0) {
@@ -217,16 +216,16 @@ function createListTreeObject(elem, subdivision, inputt) {
     block.appendChild(span);
     block.appendChild(text);
 
-    if(document.querySelector('.registration')) {
-        text.addEventListener('click', (event) => {
-            subdivisionFromTreeToTextarea(text);
-            subdivisionIdFromTreeToInputSubdivisionForm(text);
-            event.stopPropagation();
-        })
-    }
+    text.addEventListener('click', (event) => {
+        let treeObject = document.querySelector('.responsible__tree');
+        let idLocation = treeObject.getAttribute("name");
+        objectFromTreeToTextarea(idLocation, text, subdivision.type_object);
+        event.stopPropagation();
+    });
 }
 
 function setEventListenerForPlusObject(e, input) {
+    console.log(e);
     e.addEventListener('click', (event) => {
         let item = e.parentElement.parentElement;
 
@@ -241,7 +240,7 @@ function setEventListenerForPlusObject(e, input) {
 }
 
 if(document.querySelector('.tree')) {
-    /* console.log('yes'); */
+    console.log('yes');
     let input = document.querySelector('.tree-send__input');
     let table = document.querySelector('.responsible__table');
     setEventListenerForPlusObject(document.querySelector('.tree__plus'), input, table);
@@ -270,23 +269,24 @@ for (let i = 1; i < countRows+1; i++) {
 //Перетекание подразделения из дерева в textarea
 if(document.querySelector('.tree__text')) {
     let textTree = document.querySelectorAll('.tree__text');
-
     textTree.forEach(e => {
+        console.log(e);
         e.addEventListener('click', (event) => {
             let treeObject = document.querySelector('.responsible__tree');
             let idLocation = treeObject.getAttribute("name");
-            subdivisionFromTreeToTextarea(idLocation, e);
+            objectFromTreeToTextarea(idLocation, e);
             event.stopPropagation();
         })
     })
+
 }
 
-function subdivisionFromTreeToTextarea(id, treeText) {
-    console.log(treeText);
-    console.log(id);
+function objectFromTreeToTextarea(id, treeText, type_object) {
+    console.log(type_object);
     let inputSub = document.querySelector('.location-' + id);
-    inputSub.value = treeText.innerHTML.trim();
+    let inputObjType = document.querySelector('.type_location-' + id);
+    inputObjType.setAttribute("value", type_object);
+    inputSub.setAttribute("value", treeText.innerHTML.trim());
 
 }
 
-/* Дима */

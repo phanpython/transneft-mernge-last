@@ -17,6 +17,7 @@ class MaskAddModel
         
         if(isset($_POST['add-masks'])) {
 //            echo print_r($_POST);
+            dumper($_POST);
             for($i = 1; $i < 100; $i++) {
                 if(isset($_POST["add-system-$i"])){
                     if(($_POST["entrance_exit-$i"] == "exit-$i")){
@@ -31,13 +32,11 @@ class MaskAddModel
                 }
                 
             }
-            $location = 'Location: ' . HTTP . '://' . '/' . NAME_WEBSITE . '/permission/add';
+             $location = 'Location: ' . HTTP . '://' . '/' . NAME_WEBSITE . '/permission/add';
             header($location);
             die();
         }
     }
-
-    /* Дима */
 
     public function getObject($objectId) {
         $currentObjects = $this->protection->getObject(0, $objectId);
@@ -54,7 +53,7 @@ class MaskAddModel
         echo json_encode($currentObjects, JSON_UNESCAPED_UNICODE);
     }
     
-    /* Дима */
+
 
     public function getAddtuVarsToTwig():array {
 
@@ -80,7 +79,7 @@ class MaskAddModel
         }
     }
 
-    /* Дима */
+
 
     public function getAddnpsVarsToTwig($isAjax):array {
         $result = [];
@@ -126,7 +125,6 @@ class MaskAddModel
 
     }
 
-    /* Дима */
 
     public function getAddluVarsToTwig():array {
 

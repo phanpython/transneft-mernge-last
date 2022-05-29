@@ -514,6 +514,12 @@
                         <input type="text" class="row-id-process" hidden name="id" id="" required>
                     </form>
                     {% endif %}
+                    {% if roles..isDispatcher %}
+                    <form action="http://trans/permission" method="post" class="" id="pdf-mask">
+                        <input type="submit" name="pdf-masks" class="input button button-content permission-event button-permission" value="Выгрузить карту маскирования в PDF">
+                        <input type="text" class="row-id-process" hidden name="id" id="" required>
+                    </form>
+                    {% endif %}
 				</div>
 				<div class="content__filter filter-content">
 					<form method="post" class="filter-content__block">
@@ -713,6 +719,7 @@
                                             </label>
                                         </div>
                                         {% endif %}
+ 
                                         {% if protection.check_unmasking == true %}
                                         <div class="table-col table-permission__mask-status table-permission__item-mask">
                                             <label class="check-mask">
@@ -747,21 +754,6 @@
                                             </label>
                                         </div>
                                         {% endif %}
-                                        {% if protection.unmasking == true %}
-                                        <div class="table-col table-permission__mask-status table-permission__item-mask">
-                                            <label class="check-mask">
-                                                <input type="checkbox" class="check-mask__input unmasking-{{i}}" name="unmasking-{{i}}" hidden checked>
-                                                <span class="check-mask__span"></span>
-                                            </label>
-                                        </div>
-                                        {% else %}
-                                        <div class="table-col table-permission__mask-status table-permission__item-mask">
-                                            <label class="check-mask">
-                                                <input type="checkbox" class="check-mask__input unmasking-{{i}}" name="unmasking-{{i}}" hidden>
-                                                <span class="check-mask__span"></span>
-                                            </label>
-                                        </div>
-                                        {% endif %}
                                         {% if protection.check_masking == true %}
                                         <div class="table-col table-permission__mask-status table-permission__item-mask">
                                             <label class="check-mask" >
@@ -776,6 +768,30 @@
                                                 <span class="check-mask__span"></span>
                                             </label>
                                         </div>
+                                        {% endif %}
+                                        {% if protection.unmasking == true %}
+                                        <div class="table-col table-permission__mask-status table-permission__item-mask">
+                                            <label class="check-mask">
+                                                <input type="checkbox" class="check-mask__input unmasking-{{i}}" name="unmasking-{{i}}" hidden checked >
+                                                <span class="check-mask__span"></span>
+                                            </label>
+                                        </div>
+                                        {% else %}
+                                            {% if protection.flag %}
+                                                <div class="table-col table-permission__mask-status table-permission__item-mask">
+                                                    <label class="check-mask">
+                                                        <input type="checkbox" class="check-mask__input unmasking-{{i}}" name="unmasking-{{i}}" hidden>
+                                                        <span class="check-mask__spanDouble"></span>
+                                                    </label>
+                                                </div>
+                                            {% else %}
+                                                <div class="table-col table-permission__mask-status table-permission__item-mask">
+                                                    <label class="check-mask">
+                                                        <input type="checkbox" class="check-mask__input unmasking-{{i}}" name="unmasking-{{i}}" hidden>
+                                                        <span class="check-mask__span"></span>
+                                                    </label>
+                                                </div>
+                                            {% endif %}
                                         {% endif %}
                                         {% if protection.check_unmasking == true %}
                                         <div class="table-col table-permission__mask-status table-permission__item-mask">
@@ -811,21 +827,6 @@
                                             </label>
                                         </div>
                                         {% endif %}
-                                        {% if protection.unmasking == true %}
-                                        <div class="table-col table-permission__mask-status table-permission__item-mask">
-                                            <label class="check-mask">
-                                                <input type="checkbox" class="check-mask__input unmasking-{{i}}" name="unmasking-{{i}}" hidden checked disabled>
-                                                <span class="check-mask__span"></span>
-                                            </label>
-                                        </div>
-                                        {% else %}
-                                        <div class="table-col table-permission__mask-status table-permission__item-mask">
-                                            <label class="check-mask">
-                                                <input type="checkbox" class="check-mask__input unmasking-{{i}}" name="unmasking-{{i}}" hidden disabled>
-                                                <span class="check-mask__span"></span>
-                                            </label>
-                                        </div>
-                                        {% endif %}
                                         {% if protection.check_masking == true %}
                                         <div class="table-col table-permission__mask-status table-permission__item-mask">
                                             <label class="check-mask" >
@@ -837,6 +838,21 @@
                                         <div class="table-col table-permission__mask-status table-permission__item-mask">
                                             <label class="check-mask" >
                                                 <input type="checkbox" class="check-mask__input check_masking-{{i}}" name="check_masking-{{i}}" hidden>
+                                                <span class="check-mask__span"></span>
+                                            </label>
+                                        </div>
+                                        {% endif %}
+                                        {% if protection.unmasking == true %}
+                                        <div class="table-col table-permission__mask-status table-permission__item-mask">
+                                            <label class="check-mask">
+                                                <input type="checkbox" class="check-mask__input unmasking-{{i}}" name="unmasking-{{i}}" hidden checked disabled>
+                                                <span class="check-mask__span"></span>
+                                            </label>
+                                        </div>
+                                        {% else %}
+                                        <div class="table-col table-permission__mask-status table-permission__item-mask">
+                                            <label class="check-mask">
+                                                <input type="checkbox" class="check-mask__input unmasking-{{i}}" name="unmasking-{{i}}" hidden disabled>
                                                 <span class="check-mask__span"></span>
                                             </label>
                                         </div>

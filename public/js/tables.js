@@ -1,4 +1,3 @@
-//Фиксирование данных строки таблицы
 if(document.querySelector('.table-permission__row')) {
     let rowsTable = document.querySelectorAll('.table-permission__row');
     let colsTable = document.querySelectorAll('.table-permission__col');
@@ -113,14 +112,14 @@ function fixRow() {
     });
 
 }
+let countRows = document.querySelectorAll('.table-row').length;
 
 //Удаление строки
 let delButton = document.querySelector('.button-del-row');
 
 if (delButton){
     delButton.addEventListener('click', () => {
-        let countRows = document.querySelectorAll('.table-row').length;
-    
+            
         if(countRows === 1 && delRow) {
             cleanRow();
             setMasks();
@@ -314,10 +313,7 @@ const changeToEntrance = radio => {
     let entrances = parent.querySelector('.entrance-on');
     let locations = parent.querySelector('.location');
     let type_locations = parent.querySelector('.type_location');
-    locations.placeholder = 'Введите объект';
-    type_locations.placeholder = 'Введите тип объект';
-    locations.readOnly = false;
-    type_locations.readOnly = false;
+
     let vtor = parent.querySelector('.vtor');
     vtor.disabled = false;
 }
@@ -327,19 +323,13 @@ const changeToExit = radio => {
     let entrances = parent.querySelector('.exit-on');
     let locations = parent.querySelector('.location');
     let type_locations = parent.querySelector('.type_location');
-    locations.placeholder = '';
-    locations.value = '';
-    type_locations.placeholder = '';
-    type_locations.value = '';
-    type_locations.readOnly = true;
-    locations.readOnly = true;
     let vtor = parent.querySelector('.vtor');
     vtor.disabled = true;
     vtor.checked = false;
 
 }
 
-let countRows = document.querySelectorAll('.table-row').length;
+
 
 let radioEntrance = [];
 let radioExit = [];

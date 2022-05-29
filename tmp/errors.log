@@ -10085,3 +10085,62 @@ HINT:  Функция с данными именем и типами аргум�
  ===================== 
 [2022-05-26 23:49:00] Сообщение: Unexpected end of template.; Файл: C:\OpenServer\domains\trans\app\views\MaskAdd\addnps.php; Линия: 138 
  ===================== 
+[2022-05-27 22:47:00] Сообщение: SQLSTATE[42804]: Datatype mismatch: 7 ОШИБКА:  structure of query does not match function result type
+DETAIL:  Число возвращённых столбцов (3) не соответствует ожидаемому числу (4).
+CONTEXT:  SQL-оператор: "select public.object.id, public.object.name, public.object.objectid as parent_id 
+	from public.object
+	where public.object.objectid is null"
+функция PL/pgSQL get_object(integer,integer), строка 12, оператор RETURN QUERY; Файл: C:\OpenServer\domains\trans\app\widgets\protection\Protection.php; Линия: 194 
+ ===================== 
+[2022-05-27 23:14:34] Сообщение: Undefined array key "type_location-1"; Файл: C:\OpenServer\domains\trans\app\models\MaskAddModel.php; Линия: 29 
+ ===================== 
+[2022-05-27 23:16:33] Сообщение: Undefined array key "type_location-1"; Файл: C:\OpenServer\domains\trans\app\models\MaskAddModel.php; Линия: 26 
+ ===================== 
+[2022-05-27 23:17:10] Сообщение: Undefined array key "type_location-1"; Файл: C:\OpenServer\domains\trans\app\models\MaskAddModel.php; Линия: 26 
+ ===================== 
+[2022-05-27 23:18:39] Сообщение: Undefined array key "type_location-1"; Файл: C:\OpenServer\domains\trans\app\models\MaskAddModel.php; Линия: 26 
+ ===================== 
+[2022-05-27 23:21:17] Сообщение: Undefined array key "type_location-1"; Файл: C:\OpenServer\domains\trans\app\models\MaskAddModel.php; Линия: 26 
+ ===================== 
+[2022-05-27 23:21:40] Сообщение: Undefined array key "type_location-1"; Файл: C:\OpenServer\domains\trans\app\models\MaskAddModel.php; Линия: 26 
+ ===================== 
+[2022-05-27 23:21:42] Сообщение: Undefined array key "type_location-1"; Файл: C:\OpenServer\domains\trans\app\models\MaskAddModel.php; Линия: 26 
+ ===================== 
+[2022-05-27 23:22:08] Сообщение: Undefined array key "type_location-1"; Файл: C:\OpenServer\domains\trans\app\models\MaskAddModel.php; Линия: 26 
+ ===================== 
+[2022-05-27 23:22:46] Сообщение: syntax error, unexpected token "public", expecting end of file; Файл: C:\OpenServer\domains\trans\app\models\MaskAddModel.php; Линия: 43 
+ ===================== 
+[2022-05-27 23:22:49] Сообщение: syntax error, unexpected token "public", expecting end of file; Файл: C:\OpenServer\domains\trans\app\models\MaskAddModel.php; Линия: 43 
+ ===================== 
+[2022-05-28 00:38:26] Сообщение: Undefined array key "entrance_exit-1"; Файл: C:\OpenServer\domains\trans\app\models\MaskAddModel.php; Линия: 23 
+ ===================== 
+[2022-05-29 10:59:50] Сообщение: Undefined array key 4; Файл: C:\OpenServer\domains\trans\app\models\PermissionModel.php; Линия: 623 
+ ===================== 
+[2022-05-29 11:04:47] Сообщение: syntax error, unexpected token "public"; Файл: C:\OpenServer\domains\trans\app\models\PermissionModel.php; Линия: 635 
+ ===================== 
+[2022-05-29 11:06:58] Сообщение: dumper(): Argument #1 ($arr) must be of type array, string given, called in C:\OpenServer\domains\trans\app\models\PermissionModel.php on line 626; Файл: C:\OpenServer\domains\trans\vendor\core\libs\functions.php; Линия: 3 
+ ===================== 
+[2022-05-29 12:16:56] Сообщение: Unexpected "endfor" tag (expecting closing tag for the "if" tag defined near line 663).; Файл: C:\OpenServer\domains\trans\app\views\Permission\index.php; Линия: 864 
+ ===================== 
+[2022-05-29 16:31:02] Сообщение: Undefined array key "user"; Файл: C:\OpenServer\domains\trans\app\controllers\AppController.php; Линия: 32 
+ ===================== 
+[2022-05-29 16:31:38] Сообщение: Undefined array key "idCurrentPermission"; Файл: C:\OpenServer\domains\trans\app\widgets\pdf\PDF.php; Линия: 36 
+ ===================== 
+[2022-05-29 16:32:23] Сообщение: Undefined array key "idCurrentPermission"; Файл: C:\OpenServer\domains\trans\app\widgets\pdf\PDF.php; Линия: 36 
+ ===================== 
+[2022-05-29 16:33:36] Сообщение: Undefined array key "idCurrentPermission"; Файл: C:\OpenServer\domains\trans\app\widgets\pdf\PDF.php; Линия: 36 
+ ===================== 
+[2022-05-29 16:33:56] Сообщение: dumper(): Argument #1 ($arr) must be of type array, string given, called in C:\OpenServer\domains\trans\app\widgets\pdf\PDF.php on line 36; Файл: C:\OpenServer\domains\trans\vendor\core\libs\functions.php; Линия: 3 
+ ===================== 
+[2022-05-29 16:51:22] Сообщение: syntax error, unexpected token ">"; Файл: C:\OpenServer\domains\trans\app\widgets\pdf\PDF.php; Линия: 125 
+ ===================== 
+[2022-05-29 17:04:16] Сообщение: Undefined variable $typicalWorks; Файл: C:\OpenServer\domains\trans\app\widgets\pdf\PDF.php; Линия: 126 
+ ===================== 
+[2022-05-29 17:17:06] Сообщение: Undefined array key "masking_view"; Файл: C:\OpenServer\domains\trans\app\widgets\pdf\PDF.php; Линия: 159 
+ ===================== 
+[2022-05-29 17:17:32] Сообщение: Undefined array key "masking_view"; Файл: C:\OpenServer\domains\trans\app\widgets\pdf\PDF.php; Линия: 158 
+ ===================== 
+[2022-05-29 17:40:19] Сообщение: Undefined array key "system_apcs_name"; Файл: C:\OpenServer\domains\trans\app\widgets\pdf\PDF.php; Линия: 146 
+ ===================== 
+[2022-05-29 17:59:28] Сообщение: syntax error, unexpected token "protected"; Файл: C:\OpenServer\domains\trans\app\widgets\pdf\PDF.php; Линия: 188 
+ ===================== 

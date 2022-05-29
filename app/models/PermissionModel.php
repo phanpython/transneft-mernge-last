@@ -616,14 +616,31 @@ class PermissionModel extends AppModel
         return $result;
     }
 
+
+    protected function getOneMoreMasks($roles = []) {
+        $masks = $this->protection->getProtectionsOfPermissionThisStatuses($_COOKIE['user']);
+        for ($i = 0; $i < count($masks); $i++) {
+            for ($j = 0; $j < count($masks); $j++) {
+                if($i != $j){
+                    if(($masks[$i]['protection_name'] == $masks[$j]['protection_name']) && ($masks[$i]['object_name'] == $masks[$j]['object_name']) ){
+                        $masks[$i]['flag'] = true;
+                    }
+                }
+            /* dumper($masks[$i]); */
+        }
+    }
+    return $masks;
+    }
+
     public function getIndexVarsToTwig() {
         $roles = $this->role->getRoles($_COOKIE['user']);
         $currentUser = $this->user->getUsers($_COOKIE['user'])[0];
+        $masks = $this->getOneMoreMasks($roles);
 
         return ['date_start' => $this->getDate('date_start'),
             'date_end' => $this->getDate('date_end'),
             'permissions' => $this->getPermissions($roles),
-            'protections' => $this->protection->getProtectionsOfPermissionThisStatuses($_COOKIE['user']),
+            'protections' => $masks,
             'author' => $currentUser,
             'dates' => $this->getDates($roles),
             'responsiblesForPreparation' =>  $this->getEmployee(2, $roles),
@@ -796,5 +813,12 @@ class PermissionModel extends AppModel
         $pdf->download();
         $this->setLog('выгрузил в pdf разрешение', $_COOKIE['user'], $this->db, "№$id");
     }
+
+    public function downloadMasksPDF($id) {
+        $pdf = new PDF($this->db, intval($id));
+        $pdf->downloadMasks();
+        $this->setLog('выгрузил в pdf разрешение', $_COOKIE['user'], $this->db, "№$id");
+    }
+
 
 }

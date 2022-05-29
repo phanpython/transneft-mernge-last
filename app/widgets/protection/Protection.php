@@ -196,4 +196,12 @@ class Protection
         return $stmt->fetchAll();
     }
 
+    public function getOppenedMaskingProtections() {
+        $query = "SELECT * FROM get_oppened_masking_protections";
+        $stmt = $this->db->query($query);
+
+        return $stmt->fetchAll();
+    }
+
+
 }

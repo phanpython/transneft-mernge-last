@@ -2033,6 +2033,12 @@ h6 {
   height: 24px;
   border: 2px solid #00599b;
 }
+
+.check-mask__spanDouble {
+  width: 24px;
+  height: 24px;
+  border: 2px solid #FF9A02;
+}
 .check-mask__input:checked + .check-mask__span {
   border: none;
   background-image: url(../img/masking.svg);
@@ -2046,7 +2052,21 @@ h6 {
 .check-mask__input:focus + .check-mask__span {
   box-shadow: 0 0 0 2px #000;
 }
-
+/*  */
+.check-mask__input:checked + .check-mask__spanDouble {
+  border: none;
+  background-image: url(../img/masking.svg);
+}
+.check-mask__input:disabled + .check-mask__spanDouble {
+  border-color: #ccc;
+}
+.check-mask__input:checked:disabled + .check-mask__spanDouble {
+  background-image: url(../img/masking-disabled.svg);
+}
+.check-mask__input:focus + .check-mask__spanDouble {
+  box-shadow: 0 0 0 2px #000;
+}
+/*  */
 .permission-add {
   padding: 20px 0;
 }

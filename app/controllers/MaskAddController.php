@@ -46,7 +46,9 @@ class MaskAddController extends AppController
             /*  $this->model->getSubdivision($_REQUEST['id_for_sub']); */
              $this->model->getObject($_REQUEST['id_for_object']);
              $isAjax = true;
-         } 
+         }
+         
+        
 
         if(isset($_REQUEST['select_value'])){
             echo print_r($_REQUEST['select_value']);

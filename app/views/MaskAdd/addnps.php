@@ -1,4 +1,3 @@
- <!-- Дима --> 
 {% if ajax == true %}
 {% else %}
 <!DOCTYPE html>
@@ -104,14 +103,14 @@
 									</label>
 								</div>
 								<div class="table-content-mask__col table-col entrance-on" >
-                                    <input type="text" name="type_location-{{i}}" class="table-col__input type_location input-row" placeholder="Введите тип объект" value="">
+                                    <input type="text" name="type_location-{{i}}" class="table-col__input type_location-{{i}} input-row" readonly>
                                 </div>
 								<div class="table-content-mask__col table-col col-first entrance-on" >
-									<input type="text" name="location-{{i}}" class="table-col__input location location-{{i}} input-row" placeholder="Введите объект" value="" >
+									<input type="text" name="location-{{i}}" class="table-col__input location location-{{i}} input-row" readonly>
 									
 								</div>
 								<div class="table-content-mask__col table-col col-first entrance-on" >
-									<input type="text" name="{{i}}" class="input button button-location-{{i}}" value="Добавить локацию">
+									<input type="text" name="{{i}}" class="input button button-location-{{i}}" value="Выбрать объект">
 								</div>
 								<div class="table-content-mask__col table-col entrance-on">
 									<label class="check-entrance">
@@ -173,4 +172,3 @@
 </html>
 {% endif %}
 
-<!-- Дима --> 
